@@ -1,0 +1,12 @@
+services:
+  dashboard:
+    build:
+      context: .
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data:ro
+      - ./results:/app/results:ro
+    restart: unless-stopped

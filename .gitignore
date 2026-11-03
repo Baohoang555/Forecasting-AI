@@ -1,0 +1,136 @@
+# ============================================================
+# PYTHON & MÔI TRƯỜNG ẢO
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments (Conda, venv, poetry)
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+meal-history/
+
+# ============================================================
+# DỮ LIỆU (DATA) - TUYỆT ĐỐI KHÔNG COMMIT LÊN GIT
+# ============================================================
+# Bỏ qua toàn bộ dữ liệu gốc và dữ liệu trung gian (tránh lộ thông tin cá nhân & vượt giới hạn dung lượng Git)
+data/raw/*
+data/processed/*
+
+# Giữ lại cấu trúc thư mục bằng .gitkeep
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Các định dạng file dữ liệu lớn
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.npy
+*.npz
+
+# ============================================================
+# MÔ HÌNH ML / DL & LOG HUẤN LUYỆN
+# ============================================================
+# Checkpoints PyTorch, ONNX, Scikit-learn, GBDT
+*.pt
+*.pth
+*.bin
+*.onnx
+*.joblib
+*.model
+
+# Thư mục log của CatBoost, TensorBoard, Lightning
+catboost_info/
+lightning_logs/
+runs/
+wandb/
+
+# ============================================================
+# JUPYTER NOTEBOOKS & IDE CACHE
+# ============================================================
+.ipynb_checkpoints
+*-checkpoint.ipynb
+.virtual_documents/
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.code-workspace
+
+# PyCharm / JetBrains
+.idea/
+
+# ============================================================
+# KẾT QUẢ ĐẦU RA (RESULTS)
+# ============================================================
+# Giữ lại bảng metrics CSV nhưng bỏ qua các file dự đoán trung gian dung lượng lớn
+
+!results/metrics/.gitkeep
+!results/figures/.gitkeep
+
+# ============================================================
+# HỆ ĐIỀU HÀNH (WINDOWS & MACOS)
+# ============================================================
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS (nếu có cộng tác viên dùng Mac)
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+# Secrets (never commit credentials)
+.streamlit/secrets.toml
+.env
+.env.*
+!.env.example
+
+
+# Local Python test/type-check caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Private local source data and generated logs
+/data/hr.xlsx
+/data/relax_day.xlsx
+/data/company_days_off.csv
+/results/logs/
+
+# Local Docker Compose overrides
+compose.override.yaml

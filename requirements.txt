@@ -1,0 +1,36 @@
+-r requirements-dashboard.txt
+
+# --- Xử lý dữ liệu & tiện ích chung ---
+scipy>=1.10
+pyarrow>=14.0          # đọc/ghi parquet cho bảng đặc trưng lớn
+
+# --- EDA & trực quan hóa ---
+matplotlib>=3.7
+seaborn>=0.13
+
+# --- Baseline & Machine Learning (M1, M2, M3) ---
+scikit-learn>=1.3      # Ridge, Lasso, Random Forest, Decision Tree, metrics
+lightgbm>=4.3
+catboost>=1.2
+statsmodels>=0.14
+prophet>=1.1.6
+# --- Deep Learning (M4, M5) ---
+torch>=2.2
+pytorch-tabnet>=4.1    # tùy chọn, dùng nếu thay MLP bằng TabNet
+
+# --- Tuning siêu tham số ---
+optuna>=3.6
+
+# --- Diễn giải mô hình ---
+shap>=0.45
+
+# --- Ensemble / stacking ---
+scikit-learn           # Ridge/NNLS đã có sẵn ở trên, không cần cài thêm
+
+# --- Đánh giá & khoảng tin cậy ---
+mapie>=0.8             # conformal prediction, tùy chọn ở phần mở rộng
+
+# --- Tiện ích khác ---
+tqdm>=4.66
+joblib>=1.3
+python-dateutil>=2.9

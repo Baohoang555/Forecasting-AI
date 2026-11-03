@@ -1,0 +1,201 @@
+import importlib.util
+import sys
+import tempfile
+import types
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+import numpy as np
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+# Stub project-only dependencies so guard logic can be tested without the full repository.
+catboost_stub = types.ModuleType("catboost")
+catboost_stub.CatBoostRegressor = object
+sys.modules.setdefault("catboost", catboost_stub)
+clean_stub = types.ModuleType("data_cleaning")
+clean_stub.PUBLIC_HOLIDAYS = pd.DatetimeIndex(["2026-01-01", "2026-02-16"])
+clean_stub.PUBLIC_HOLIDAY_COVERAGE_YEAR = 2026
+clean_stub.USING_OFFICIAL_HOLIDAY_CALENDAR = True
+sys.modules.setdefault("data_cleaning", clean_stub)
+
+spec = importlib.util.spec_from_file_location("predict_next_month", ROOT / "src" / "predict_next_month.py")
+predict = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(predict)
+spec2 = importlib.util.spec_from_file_location("monitor_forecast_accuracy", ROOT / "src" / "monitor_forecast_accuracy.py")
+monitor = importlib.util.module_from_spec(spec2)
+spec2.loader.exec_module(monitor)
+
+
+class ForecastGuardsTest(unittest.TestCase):
+    def test_complete_month_flag_parses_false_string_as_false(self):
+        parsed = predict.normalize_complete_flag(pd.Series(["True", "False", "0", "yes"]))
+        self.assertEqual(parsed.tolist(), [True, False, False, True])
+
+    def test_requires_explicit_complete_month_flag(self):
+        with self.assertRaisesRegex(ValueError, "is_complete_month"):
+            predict.get_last_complete_month(pd.DataFrame({"employee_id": [1], "month": ["2026-01"]}))
+
+    def test_no_complete_month_fails_closed(self):
+        df = pd.DataFrame({"employee_id": [1], "month": ["2026-01"], "is_complete_month": [False]})
+        with self.assertRaisesRegex(ValueError, "Không có tháng hoàn chỉnh được xác nhận"):
+            predict.get_last_complete_month(df)
+
+    def test_round_predictions_without_invalid_workday_cap(self):
+        n44, n70 = predict.cap_and_round_meals(
+            [12.7, -3, 0.4, 50], [12.7, 4, 0.4, 50], [20, 10, 1, 0]
+        )
+        self.assertTrue(np.all(n44 >= 0))
+        self.assertTrue(np.all(n70 >= 0))
+        self.assertEqual(n44.tolist(), [13, 0, 0, 50])
+        self.assertEqual(n70.tolist(), [13, 4, 0, 50])
+        self.assertGreater(n44[-1] + n70[-1], 0)
+
+    def test_production_features_include_backtest_department_encodings(self):
+        self.assertIn("dept_enc_n44", predict.MODEL_FEATURES)
+        self.assertIn("dept_enc_n70", predict.MODEL_FEATURES)
+
+    def test_reinstates_only_attendance_sync_reason_and_applies_cutoff(self):
+        sys.path.insert(0, str(ROOT / "src"))
+        cleaning_spec = importlib.util.spec_from_file_location(
+            "data_cleaning_real", ROOT / "src" / "data_cleaning.py"
+        )
+        cleaning = importlib.util.module_from_spec(cleaning_spec)
+        cleaning_spec.loader.exec_module(cleaning)
+
+        rows = [
+            {
+                "employee_id": "1",
+                "department": "D",
+                "meal_type_raw": "Vietnamese Meal (Vietnamese Meal)",
+                "bonus_meal_raw": "",
+                "shift_raw": "Shift 1 (Shift 1)",
+                "amount": "44000",
+                "cumulative_raw": "",
+                "checkin_time": "2025-09-11 12:00:00",
+                "status": "Không hợp lệ",
+                "reason": "Chưa có log điểm danh",
+            },
+            {
+                "employee_id": "2",
+                "department": "D",
+                "meal_type_raw": "Vietnamese Meal (Vietnamese Meal)",
+                "bonus_meal_raw": "",
+                "shift_raw": "Shift 1 (Shift 1)",
+                "amount": "44000",
+                "cumulative_raw": "",
+                "checkin_time": "2025-09-12 12:00:00",
+                "status": "Không hợp lệ",
+                "reason": "Không đúng line ăn đã đăng ký",
+            },
+            {
+                "employee_id": "3",
+                "department": "D",
+                "meal_type_raw": "Vietnamese Meal (Vietnamese Meal)",
+                "bonus_meal_raw": "",
+                "shift_raw": "Shift 1 (Shift 1)",
+                "amount": "44000",
+                "cumulative_raw": "",
+                "checkin_time": "2025-07-31 12:00:00",
+                "status": "Hợp lệ",
+                "reason": "",
+            },
+        ]
+        clean, removed = cleaning.clean_log(pd.DataFrame(rows))
+        self.assertEqual(clean["employee_id"].astype(int).tolist(), [1])
+        self.assertTrue(clean["reinstated_attendance_sync"].tolist() == [True])
+        self.assertIn("truoc_ngay_bat_dau_phan_tich", removed["drop_reason"].tolist())
+        self.assertEqual(
+            int(removed["drop_reason"].eq("trang_thai_khong_hop_le").sum()),
+            1,
+        )
+
+    def test_hr_filter_excludes_non_roster_rows_and_guards_bad_match_rate(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            hr_path = Path(tmp) / "hr.xlsx"
+            hr_path.touch()
+            forecast = pd.DataFrame({"employee_id": [1, 2, 3]})
+            with patch.object(
+                predict.pd,
+                "read_excel",
+                return_value=pd.DataFrame({"Mã NV": [1, 2]}),
+            ):
+                included, excluded = predict.split_by_hr_roster(
+                    forecast, hr_path, max_excluded_share=0.4
+                )
+                self.assertEqual(included["employee_id"].tolist(), [1, 2])
+                self.assertEqual(excluded["employee_id"].tolist(), [3])
+                with self.assertRaisesRegex(ValueError, "vượt ngưỡng an toàn"):
+                    predict.split_by_hr_roster(
+                        forecast, hr_path, max_excluded_share=0.2
+                    )
+
+    def test_holiday_calendar_reads_recognized_date_column(self):
+        sys.path.insert(0, str(ROOT / "src"))
+        from calendar_utils import load_calendar_table
+
+        with tempfile.TemporaryDirectory() as tmp:
+            calendar_path = Path(tmp) / "holidays.xlsx"
+            pd.DataFrame(
+                {"Holiday period": ["30/08/2025 - 02/09/2025", "2026-01-01", "not-a-date"]}
+            ).to_excel(calendar_path, index=False)
+            calendar = load_calendar_table(calendar_path)
+            self.assertEqual(
+                calendar["date"].tolist(),
+                [
+                    pd.Timestamp("2025-08-30"),
+                    pd.Timestamp("2025-08-31"),
+                    pd.Timestamp("2025-09-01"),
+                    pd.Timestamp("2025-09-02"),
+                    pd.Timestamp("2026-01-01"),
+                ],
+            )
+
+    def test_forecast_cohort_only_uses_latest_three_calendar_months(self):
+        rows = []
+        for month in pd.period_range("2026-01", "2026-04", freq="M"):
+            rows.append({"employee_id": "A", "month": month, "department": "D", "N44": 1, "N70": 0,
+                         "total_meals": 1, "days_with_meal": 1, "total_amount": 44000, "is_complete_month": True})
+        rows.append({"employee_id": "OLD", "month": pd.Period("2026-01", freq="M"), "department": "D", "N44": 1, "N70": 0,
+                     "total_meals": 1, "days_with_meal": 1, "total_amount": 44000, "is_complete_month": True})
+        df = pd.DataFrame(rows)
+        out = predict.build_forecast_feature_row(df, pd.Period("2026-05", freq="M"), pd.Period("2026-04", freq="M"))
+        self.assertEqual(out.employee_id.tolist(), ["A"])
+
+    def test_monitor_keeps_unmatched_ids_in_company_totals(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            forecast_path = tmp / "forecast.csv"
+            pd.DataFrame({"employee_id": ["A", "F"], "forecast_month": ["2026-04", "2026-04"],
+                          "pred_cost": [100.0, 50.0]}).to_csv(forecast_path, index=False)
+            actual = pd.DataFrame({"employee_id": ["A", "X"], "month": [pd.Period("2026-04", freq="M")]*2,
+                                   "N44": [0, 0], "N70": [0, 0], "total_amount": [80.0, 20.0]})
+            monthly_path = tmp / "monthly.parquet"
+            monthly_path.touch()
+            with patch.object(monitor.pd, "read_parquet", return_value=actual):
+                row = monitor.run_monitor(forecast_path, monthly_path, output_dir=tmp / "metrics")
+            self.assertEqual(row["n_forecast_only"], 1)
+            self.assertEqual(row["n_actual_only"], 1)
+            self.assertEqual(row["forecast_total_cost_all"], 150.0)
+            self.assertEqual(row["actual_total_cost_all"], 100.0)
+            comparison = pd.read_csv(tmp / "metrics" / "forecast_accuracy_employees_2026-04.csv")
+            self.assertEqual(set(comparison.status), {"matched", "forecast_only", "actual_only"})
+
+    def test_monitor_rejects_duplicate_forecast_employee(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            forecast_path = tmp / "forecast.csv"
+            pd.DataFrame({"employee_id": ["A", "A"], "forecast_month": ["2026-04"]*2,
+                          "pred_cost": [100.0, 120.0]}).to_csv(forecast_path, index=False)
+            monthly_path = tmp / "monthly.parquet"
+            monthly_path.touch()
+            with patch.object(monitor.pd, "read_parquet", return_value=pd.DataFrame({"employee_id": ["Z"], "month": [pd.Period("2026-04", freq="M")]})):
+                with self.assertRaisesRegex(ValueError, "trùng"):
+                    monitor.run_monitor(forecast_path, monthly_path, output_dir=tmp / "metrics")
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

@@ -1,0 +1,58 @@
+employee_id,department,forecast_month,pred_N44,pred_N70,pred_cost,source
+10000718,07.INTERN,2026-09,5,0,220000,Group-Mean (cold-start)
+20009423,18.OI,2026-09,0,0,0,CatBoost
+20016466,20.DFO- 987,2026-09,0,6,420000,CatBoost
+20250001,Khách không tính phí,2026-09,1,0,44000,CatBoost
+20250002,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250003,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250004,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250005,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250006,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250007,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250008,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250009,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250010,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250011,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250012,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250013,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250014,Khách không tính phí,2026-09,0,0,0,CatBoost
+20250015,Khách không tính phí,2026-09,0,0,0,CatBoost
+20251001,Khách tính phí,2026-09,0,0,0,CatBoost
+20251002,Khách tính phí,2026-09,0,0,0,CatBoost
+20251003,Khách tính phí,2026-09,0,0,0,CatBoost
+20251004,Khách tính phí,2026-09,0,5,350000,CatBoost
+20251005,Khách tính phí,2026-09,0,0,0,CatBoost
+20251006,Khách tính phí,2026-09,1,2,184000,CatBoost
+20251007,Khách tính phí,2026-09,0,0,0,CatBoost
+20251008,Khách tính phí,2026-09,0,0,0,CatBoost
+20251009,Khách tính phí,2026-09,0,0,0,CatBoost
+20251010,Khách tính phí,2026-09,0,0,0,CatBoost
+20260001,03.2500. IT,2026-09,0,0,0,CatBoost
+3109,18.Team08,2026-09,11,0,484000,Group-Mean (cold-start)
+3125,15.Team14,2026-09,16,0,704000,CatBoost
+3500,13.Team12,2026-09,19,0,836000,CatBoost
+3728,04.Hull Structural,2026-09,11,2,624000,CatBoost
+3898,17.Team07,2026-09,0,0,0,CatBoost
+40994393,19.Purus - 974,2026-09,0,0,0,CatBoost
+40996333,20.DFO- 987,2026-09,0,15,1050000,CatBoost
+40996576,19.Purus - 974,2026-09,0,0,0,CatBoost
+40997218,20.DFO- 987,2026-09,3,16,1252000,CatBoost
+40997980,20.DFO- 987,2026-09,15,0,660000,CatBoost
+40998128,20.DFO- 987,2026-09,0,10,700000,CatBoost
+40998585,13.Vard Accomodation,2026-09,1,16,1164000,CatBoost
+40998779,19.Purus - 974,2026-09,0,0,0,CatBoost
+40999431,20.DFO- 987,2026-09,0,6,420000,CatBoost
+41003332,18.OI,2026-09,0,0,0,CatBoost
+41003428,20.DFO- 987,2026-09,0,3,210000,CatBoost
+41004070,20.DFO- 987,2026-09,0,1,70000,CatBoost
+41004252,20.DFO- 987,2026-09,2,10,788000,Group-Mean (cold-start)
+41004352,20.DFO- 987,2026-09,2,10,788000,Group-Mean (cold-start)
+41004493,20.DFO- 987,2026-09,2,10,788000,Group-Mean (cold-start)
+41004612,20.DFO- 987,2026-09,2,10,788000,Group-Mean (cold-start)
+41004647,20.DFO- 987,2026-09,2,10,788000,Group-Mean (cold-start)
+41004649,20.DFO- 987,2026-09,2,10,788000,Group-Mean (cold-start)
+41004672,20.DFO- 987,2026-09,2,10,788000,Group-Mean (cold-start)
+41004992,20.DFO- 987,2026-09,2,10,788000,Group-Mean (cold-start)
+41005102,20.DFO- 987,2026-09,2,10,788000,Group-Mean (cold-start)
+4437,05.SEAONICS,2026-09,17,0,748000,CatBoost
+9999,unknown,2026-09,0,0,0,CatBoost
